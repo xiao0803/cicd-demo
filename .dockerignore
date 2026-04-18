@@ -1,0 +1,9 @@
+target/
+.idea/
+*.iml
+.git/
+.github/
+k8s/
+helm/
+monitoring/
+*.md
