@@ -27,8 +27,8 @@ spec:
     spec:
       containers:
         - name: app
-          image: ghcr.io/xiao0803/cicd-demo:latest
-          imagePullPolicy: IfNotPresent
+          image: cicd-demo:local
+          imagePullPolicy: Never
           ports:
             - name: http
               containerPort: 8080
