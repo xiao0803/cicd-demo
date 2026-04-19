@@ -53,11 +53,14 @@ Dockerfile 采用两阶段构建，运行镜像基于 `eclipse-temurin:21-jre-al
 
 1. `mvn test` —— 运行单元测试
 2. `mvn package` —— 打 jar
-3. `docker build` —— 构建镜像
-4. `docker push ghcr.io/<owner>/cicd-demo:<sha>` —— 推到 GHCR
+3. 构建镜像
+`docker build -t ghcr.io/<owner>/cicd-demo:<tag> .` —— 用于push远程
+`docker build -t cicd-demo:local .` —— 本地测试
+4. `docker push ghcr.io/<owner>/cicd-demo:<tag>` —— 推到 GHCR
+示例：docker push ghcr.io/zhangsan/cicd-demo:latest
 5. （可选）SSH/kubectl 部署到 K8s
 
-详见 `.github/workflows/ci.yml`。
+详见 `.github/workflows/ci.yml`
 
 ## 4. K8s 部署
 

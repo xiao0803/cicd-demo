@@ -11,8 +11,13 @@ public class HelloController {
         return "hello world";
     }
 
-    @GetMapping("/helloV2")
-    public String helloV2() {
-        return "hello world V2";
+    @GetMapping("/helloV4")
+    public String helloV4() {
+        return "hello world V4";
+    }
+
+    @GetMapping("/helloV3")
+    public String helloV3() {
+        return "hello world V3";
     }
 }
