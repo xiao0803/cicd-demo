@@ -77,6 +77,7 @@ helm upgrade --install cicd-demo ./helm/cicd-demo
 ## 5. 可观测性
 
 ```bash
+先进入项目中的monitoring文件夹,执行docker命令
 cd monitoring
 docker compose up -d
 ```
