@@ -70,7 +70,7 @@ jobs:
         uses: openai/codex-action@main
         id: codex
         with:
-          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           prompt: |
             You are working in a Java 21 Spring Boot Maven project with GitHub Actions CI.
 
@@ -84,7 +84,7 @@ jobs:
             Run `mvn -B -ntp test` before finishing.
             Implement only the smallest relevant change. Do not refactor unrelated code,
             reformat unrelated files, or change deployment secrets.
-          codex_args: '["--config","sandbox_mode=\"workspace-write\""]'
+          codex-args: '["--config","sandbox_mode=\"workspace-write\""]'
 
       - name: Verify tests
         if: steps.preflight.outputs.enabled == 'true'
