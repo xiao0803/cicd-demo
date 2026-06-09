@@ -22,6 +22,20 @@ OpenAI Cookbook 中的做法：当 CI 失败时，使用 Codex 自动分析失�
 2. 进入 `Settings` -> `Secrets and variables` -> `Actions`。
 3. 添加 `OPENAI_API_KEY`，值为允许 CI 使用的 OpenAI API key。
 
+如果希望 Codex 可以修复 `.github/workflows/*.yml` 这类 GitHub Actions 工作流文件，还需要添加
+`CODEX_AUTOFIX_TOKEN`：
+
+1. 创建一个 GitHub Personal Access Token。
+2. 如果使用 classic token，需要授予 `repo` 和 `workflow` scope。
+3. 如果使用 fine-grained token，需要允许当前仓库的 `Contents`、`Pull requests` 和 `Workflows`
+   读写权限。
+4. 在仓库的 `Settings` -> `Secrets and variables` -> `Actions` 中添加
+   `CODEX_AUTOFIX_TOKEN`，值为这个 token。
+
+原因是 GitHub 默认的 `GITHUB_TOKEN` 即使具备 `contents: write`，也不能推送包含 workflow
+文件变更的 commit。没有 `CODEX_AUTOFIX_TOKEN` 时，普通代码修复仍然可以创建 PR；但如果 Codex
+修改了 `.github/workflows/` 下的文件，推送 PR 分支会被 GitHub 拒绝。
+
 同时确认 GitHub Actions 有权限创建 pull request：
 
 1. 进入 `Settings` -> `Actions` -> `General`。
