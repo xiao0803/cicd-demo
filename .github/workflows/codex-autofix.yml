@@ -1,0 +1,113 @@
+name: Codex Auto-Fix on CI Failure
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-fix:
+    name: Generate CI fix
+    if: >-
+      ${{
+        github.event.workflow_run.conclusion == 'failure' &&
+        github.event.workflow_run.head_repository.full_name == github.repository
+      }}
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      FAILED_WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+      FAILED_RUN_ID: ${{ github.event.workflow_run.id }}
+      FAILED_RUN_URL: ${{ github.event.workflow_run.html_url }}
+      FAILED_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+      FAILED_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+
+    steps:
+      - name: Check OpenAI API key
+        id: preflight
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "OPENAI_API_KEY secret is not set. Skipping Codex auto-fix."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout failing ref
+        if: steps.preflight.outputs.enabled == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.FAILED_HEAD_SHA }}
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        if: steps.preflight.outputs.enabled == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Capture failed workflow logs
+        if: steps.preflight.outputs.enabled == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p .codex-autofix
+          gh run view "$FAILED_RUN_ID" --repo "$GITHUB_REPOSITORY" --log > .codex-autofix/failed-run.log || {
+            echo "Could not fetch failed workflow logs." > .codex-autofix/failed-run.log
+            echo "Failed run: $FAILED_RUN_URL" >> .codex-autofix/failed-run.log
+          }
+
+      - name: Run Codex
+        if: steps.preflight.outputs.enabled == 'true'
+        uses: openai/codex-action@main
+        id: codex
+        with:
+          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          prompt: |
+            You are working in a Java 21 Spring Boot Maven project with GitHub Actions CI.
+
+            The failed workflow is `${{ env.FAILED_WORKFLOW_NAME }}`.
+            The failed run URL is `${{ env.FAILED_RUN_URL }}`.
+            The failing workflow logs are available at `.codex-autofix/failed-run.log`.
+
+            Read the repository and the failed workflow logs. Identify the minimal code,
+            test, build, Docker, Kubernetes, Helm, or workflow change needed to make CI pass.
+            Prefer fixing Maven test/build failures first when the logs point there.
+            Run `mvn -B -ntp test` before finishing.
+            Implement only the smallest relevant change. Do not refactor unrelated code,
+            reformat unrelated files, or change deployment secrets.
+          codex_args: '["--config","sandbox_mode=\"workspace-write\""]'
+
+      - name: Verify tests
+        if: steps.preflight.outputs.enabled == 'true'
+        run: mvn -B -ntp test
+
+      - name: Remove temporary auto-fix logs
+        if: steps.preflight.outputs.enabled == 'true'
+        run: rm -rf .codex-autofix
+
+      - name: Create pull request with fixes
+        if: steps.preflight.outputs.enabled == 'true' && success()
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "fix(ci): auto-fix failing CI via Codex"
+          branch: codex/auto-fix-${{ github.event.workflow_run.id }}
+          base: ${{ env.FAILED_HEAD_BRANCH }}
+          title: "Auto-fix failing CI via Codex"
+          body: |
+            Codex generated this PR in response to a CI failure.
+
+            Failed workflow: `${{ env.FAILED_WORKFLOW_NAME }}`
+            Failed run: ${{ env.FAILED_RUN_URL }}
+            Head branch: `${{ env.FAILED_HEAD_BRANCH }}`
+            Head SHA: `${{ env.FAILED_HEAD_SHA }}`
+
+            The changes are intended to be minimal and should be reviewed before merge.
