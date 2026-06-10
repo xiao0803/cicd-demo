@@ -15,9 +15,8 @@ pipeline {
                 '''
                 aiAgent(
                     apiCredentialsId: 'anthropic-api-key',
-                    approvalTimeoutSeconds: 1,
+                    approvalTimeoutSeconds: 30,
                     failOnAgentError: false,
-                    yoloMode: true,
                     prompt: '''
 请分析当前工作区的项目代码结构，然后生成一个完整的 Jenkinsfile.generated 文件。
 
