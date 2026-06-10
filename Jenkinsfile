@@ -1,17 +1,16 @@
 pipeline {
     agent any
 
-    tools {
-        nodejs 'NodeJS-20'
-    }
-
     stages {
         stage('AI Generate Pipeline') {
             steps {
                 sh '''
-                    which node && which npx
-                    ln -sf $(which npx) /usr/local/bin/npx 2>/dev/null || true
-                    apt-get install -y libatomic1 2>/dev/null || true
+                    if ! node --version 2>/dev/null; then
+                        apt-get update -qq
+                        apt-get install -y curl
+                        curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+                        apt-get install -y nodejs
+                    fi
                     node --version && npx --version
                 '''
                 aiAgent(
