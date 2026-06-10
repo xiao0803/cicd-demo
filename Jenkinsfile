@@ -8,7 +8,12 @@ pipeline {
     stages {
         stage('AI Generate Pipeline') {
             steps {
-                sh 'echo "PATH=$PATH" && which node && which npx && ln -sf $(which npx) /usr/local/bin/npx 2>/dev/null || true'
+                sh '''
+                    which node && which npx
+                    ln -sf $(which npx) /usr/local/bin/npx 2>/dev/null || true
+                    apt-get install -y libatomic1 2>/dev/null || true
+                    node --version && npx --version
+                '''
                 aiAgent(
                     apiCredentialsId: 'anthropic-api-key',
                     approvalTimeoutSeconds: 1,
