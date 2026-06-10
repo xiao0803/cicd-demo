@@ -8,6 +8,7 @@ pipeline {
     stages {
         stage('AI Generate Pipeline') {
             steps {
+                sh 'echo "PATH=$PATH" && which node && which npx && ln -sf $(which npx) /usr/local/bin/npx 2>/dev/null || true'
                 aiAgent(
                     apiCredentialsId: 'anthropic-api-key',
                     approvalTimeoutSeconds: 1,
